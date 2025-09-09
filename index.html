@@ -6,7 +6,353 @@
     <title>Облік кореспонденції</title>
     <script src="https://telegram.org/js/telegram-web-app.js"></script>
     <style>
-        /* Стилі не змінені */
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+            background-color: var(--tg-theme-bg-color, #ffffff);
+            color: var(--tg-theme-text-color, #000000);
+            line-height: 1.5;
+            padding: 16px;
+        }
+
+        .header {
+            text-align: center;
+            margin-bottom: 24px;
+            padding: 16px;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            border-radius: 16px;
+            color: white;
+            box-shadow: 0 4px 20px rgba(0,0,0,0.1);
+        }
+
+        .header h1 {
+            font-size: 24px;
+            font-weight: 700;
+            margin-bottom: 8px;
+        }
+
+        .header p {
+            font-size: 14px;
+            opacity: 0.9;
+        }
+
+        .menu-grid {
+            display: grid;
+            grid-template-columns: repeat(2, 1fr);
+            gap: 16px;
+            margin-bottom: 24px;
+        }
+
+        .menu-item {
+            background: var(--tg-theme-secondary-bg-color, #f8f9fa);
+            border: none;
+            border-radius: 16px;
+            padding: 20px;
+            text-align: center;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            box-shadow: 0 2px 8px rgba(0,0,0,0.1);
+            position: relative;
+            overflow: hidden;
+        }
+
+        .menu-item:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 8px 25px rgba(0,0,0,0.15);
+        }
+
+        .menu-item::before {
+            content: '';
+            position: absolute;
+            top: 0;
+            left: -100%;
+            width: 100%;
+            height: 100%;
+            background: linear-gradient(90deg, transparent, rgba(255,255,255,0.2), transparent);
+            transition: left 0.5s;
+        }
+
+        .menu-item:hover::before {
+            left: 100%;
+        }
+
+        .menu-item .icon {
+            font-size: 32px;
+            margin-bottom: 8px;
+            display: block;
+        }
+
+        .menu-item .title {
+            font-size: 14px;
+            font-weight: 600;
+            color: var(--tg-theme-text-color, #000000);
+        }
+
+        .form-container {
+            display: none;
+            background: var(--tg-theme-secondary-bg-color, #f8f9fa);
+            border-radius: 16px;
+            padding: 24px;
+            margin-bottom: 16px;
+            box-shadow: 0 4px 20px rgba(0,0,0,0.1);
+        }
+
+        .form-container.active {
+            display: block;
+            animation: slideIn 0.3s ease-out;
+        }
+
+        @keyframes slideIn {
+            from { opacity: 0; transform: translateY(20px); }
+            to { opacity: 1; transform: translateY(0); }
+        }
+
+        .form-group {
+            margin-bottom: 20px;
+        }
+
+        .form-group label {
+            display: block;
+            margin-bottom: 8px;
+            font-weight: 600;
+            color: var(--tg-theme-text-color, #000000);
+        }
+
+        .form-group input,
+        .form-group textarea,
+        .form-group select {
+            width: 100%;
+            padding: 12px 16px;
+            border: 2px solid #e9ecef;
+            border-radius: 12px;
+            font-size: 16px;
+            background: var(--tg-theme-bg-color, #ffffff);
+            color: var(--tg-theme-text-color, #000000);
+            transition: border-color 0.3s ease;
+        }
+
+        .form-group input:focus,
+        .form-group textarea:focus,
+        .form-group select:focus {
+            outline: none;
+            border-color: #667eea;
+            box-shadow: 0 0 0 3px rgba(102, 126, 234, 0.1);
+        }
+
+        .form-group textarea {
+            min-height: 80px;
+            resize: vertical;
+        }
+
+        .btn {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+            border: none;
+            padding: 12px 24px;
+            border-radius: 12px;
+            font-size: 16px;
+            font-weight: 600;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            width: 100%;
+            margin-bottom: 8px;
+        }
+
+        .btn:hover {
+            transform: translateY(-1px);
+            box-shadow: 0 4px 15px rgba(102, 126, 234, 0.4);
+        }
+
+        .btn-secondary {
+            background: var(--tg-theme-secondary-bg-color, #6c757d);
+            color: var(--tg-theme-text-color, #ffffff);
+        }
+
+        .btn-danger {
+            background: linear-gradient(135deg, #ff6b6b 0%, #ee5a52 100%);
+        }
+
+        .search-container {
+            display: none;
+            background: var(--tg-theme-secondary-bg-color, #f8f9fa);
+            border-radius: 16px;
+            padding: 24px;
+            margin-bottom: 16px;
+        }
+
+        .search-container.active {
+            display: block;
+            animation: slideIn 0.3s ease-out;
+        }
+
+        .search-results {
+            margin-top: 20px;
+        }
+
+        .document-card {
+            background: var(--tg-theme-bg-color, #ffffff);
+            border-radius: 12px;
+            padding: 16px;
+            margin-bottom: 12px;
+            box-shadow: 0 2px 8px rgba(0,0,0,0.1);
+            border-left: 4px solid #667eea;
+        }
+
+        .document-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 12px;
+        }
+
+        .document-number {
+            font-weight: 700;
+            color: #667eea;
+        }
+
+        .document-type {
+            padding: 4px 8px;
+            border-radius: 8px;
+            font-size: 12px;
+            font-weight: 600;
+        }
+
+        .type-incoming {
+            background: #d1ecf1;
+            color: #0c5460;
+        }
+
+        .type-outgoing {
+            background: #f8d7da;
+            color: #721c24;
+        }
+
+        .document-content {
+            font-size: 14px;
+            line-height: 1.4;
+        }
+
+        .document-content .field {
+            margin-bottom: 8px;
+        }
+
+        .document-content .label {
+            font-weight: 600;
+            color: var(--tg-theme-hint-color, #999999);
+        }
+
+        .stats-container {
+            display: grid;
+            grid-template-columns: repeat(2, 1fr);
+            gap: 12px;
+            margin-bottom: 24px;
+        }
+
+        .stat-card {
+            background: var(--tg-theme-secondary-bg-color, #f8f9fa);
+            border-radius: 12px;
+            padding: 16px;
+            text-align: center;
+            box-shadow: 0 2px 8px rgba(0,0,0,0.1);
+        }
+
+        .stat-number {
+            font-size: 24px;
+            font-weight: 700;
+            color: #667eea;
+            margin-bottom: 4px;
+        }
+
+        .stat-label {
+            font-size: 12px;
+            color: var(--tg-theme-hint-color, #999999);
+        }
+
+        .loading {
+            display: none;
+            text-align: center;
+            padding: 20px;
+        }
+
+        .loading.active {
+            display: block;
+        }
+
+        .spinner {
+            border: 3px solid #f3f3f3;
+            border-top: 3px solid #667eea;
+            border-radius: 50%;
+            width: 30px;
+            height: 30px;
+            animation: spin 1s linear infinite;
+            margin: 0 auto 10px;
+        }
+
+        @keyframes spin {
+            0% { transform: rotate(0deg); }
+            100% { transform: rotate(360deg); }
+        }
+
+        .file-upload {
+            position: relative;
+            display: inline-block;
+            width: 100%;
+        }
+
+        .file-upload input[type=file] {
+            position: absolute;
+            left: -9999px;
+        }
+
+        .file-upload-label {
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            padding: 12px;
+            border: 2px dashed #667eea;
+            border-radius: 12px;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            background: rgba(102, 126, 234, 0.05);
+        }
+
+        .file-upload-label:hover {
+            border-color: #5a67d8;
+            background: rgba(102, 126, 234, 0.1);
+        }
+
+        .success-message {
+            background: #d4edda;
+            border: 1px solid #c3e6cb;
+            color: #155724;
+            padding: 12px;
+            border-radius: 8px;
+            margin-bottom: 16px;
+            display: none;
+        }
+
+        .success-message.active {
+            display: block;
+        }
+
+        .error-message {
+            background: #f8d7da;
+            border: 1px solid #f5c6cb;
+            color: #721c24;
+            padding: 12px;
+            border-radius: 8px;
+            margin-bottom: 16px;
+            display: none;
+        }
+
+        .error-message.active {
+            display: block;
+        }
     </style>
 </head>
 <body>
@@ -54,33 +400,35 @@
         <form id="incomingFormData">
             <div class="form-group">
                 <label for="inFromWhom">Від кого</label>
-                <input type="text" id="inFromWhom" name="fromWhom" required placeholder="Назва організації або особи">
+                <input type="text" id="inFromWhom" name="fromWhom" required 
+                       placeholder="Назва організації або особи">
             </div>
             <div class="form-group">
                 <label for="inSubject">Об'єкт документа</label>
-                <input type="text" id="inSubject" name="subject" required placeholder="Тема або предмет документа">
+                <input type="text" id="inSubject" name="subject" required 
+                       placeholder="Тема або предмет документа">
             </div>
             <div class="form-group">
                 <label for="inContent">Зміст документа</label>
-                <textarea id="inContent" name="content" required placeholder="Короткий опис змісту документа"></textarea>
+                <textarea id="inContent" name="content" required 
+                          placeholder="Короткий опис змісту документа"></textarea>
             </div>
             <div class="form-group">
                 <label for="inDate">Дата отримання</label>
                 <input type="date" id="inDate" name="receivedDate" required>
             </div>
             <div class="form-group">
-                <label for="registeredBy">Хто реєструє документ</label>
-                <input type="text" id="registeredBy" name="registeredBy" required placeholder="Введіть ваше ім'я">
-            </div>
-            <div class="form-group">
                 <label for="inNotes">Примітки (необов'язково)</label>
-                <textarea id="inNotes" name="notes" placeholder="Додаткові примітки до документа"></textarea>
+                <textarea id="inNotes" name="notes" 
+                          placeholder="Додаткові примітки до документа"></textarea>
             </div>
             <div class="form-group">
                 <label>Прикріпити файл (необов'язково)</label>
                 <div class="file-upload">
                     <input type="file" id="inFile" name="file" accept=".pdf,.doc,.docx,.xlsx,.xls,.jpg,.png">
-                    <label for="inFile" class="file-upload-label">📎 Вибрати файл</label>
+                    <label for="inFile" class="file-upload-label">
+                        📎 Вибрати файл
+                    </label>
                 </div>
             </div>
             <button type="submit" class="btn">✅ Зареєструвати документ</button>
@@ -94,15 +442,18 @@
         <form id="outgoingFormData">
             <div class="form-group">
                 <label for="outToWhom">Кому</label>
-                <input type="text" id="outToWhom" name="toWhom" required placeholder="Назва організації або особи">
+                <input type="text" id="outToWhom" name="toWhom" required 
+                       placeholder="Назва організації або особи">
             </div>
             <div class="form-group">
                 <label for="outSubject">Об'єкт документа</label>
-                <input type="text" id="outSubject" name="subject" required placeholder="Тема або предмет документа">
+                <input type="text" id="outSubject" name="subject" required 
+                       placeholder="Тема або предмет документа">
             </div>
             <div class="form-group">
                 <label for="outContent">Зміст документа</label>
-                <textarea id="outContent" name="content" required placeholder="Короткий опис змісту документа"></textarea>
+                <textarea id="outContent" name="content" required 
+                          placeholder="Короткий опис змісту документа"></textarea>
             </div>
             <div class="form-group">
                 <label for="outDate">Дата відправки</label>
@@ -110,13 +461,16 @@
             </div>
             <div class="form-group">
                 <label for="outNotes">Примітки (необов'язково)</label>
-                <textarea id="outNotes" name="notes" placeholder="Додаткові примітки до документа"></textarea>
+                <textarea id="outNotes" name="notes" 
+                          placeholder="Додаткові примітки до документа"></textarea>
             </div>
             <div class="form-group">
                 <label>Прикріпити файл (необов'язково)</label>
                 <div class="file-upload">
                     <input type="file" id="outFile" name="file" accept=".pdf,.doc,.docx,.xlsx,.xls,.jpg,.png">
-                    <label for="outFile" class="file-upload-label">📎 Вибрати файл</label>
+                    <label for="outFile" class="file-upload-label">
+                        📎 Вибрати файл
+                    </label>
                 </div>
             </div>
             <button type="submit" class="btn">✅ Зареєструвати документ</button>
@@ -131,8 +485,7 @@
             <label for="searchQuery">Пошуковий запит</label>
             <input type="text" id="searchQuery" placeholder="Введіть ключові слова для пошуку">
         </div>
-        <button class="btn" onclick="performSearch('incoming')">🔍 Пошук по вхідній</button>
-        <button class="btn" onclick="performSearch('outgoing')">🔍 Пошук по вихідній</button>
+        <button class="btn" onclick="performSearch()">🔍 Знайти</button>
         <button class="btn btn-secondary" onclick="hideAllForms()">❌ Закрити</button>
         
         <div class="search-results" id="searchResults"></div>
@@ -220,14 +573,13 @@
                 return document;
             }
 
-            search(query, type) {
+            search(query) {
                 const incoming = this.getIncoming();
                 const outgoing = this.getOutgoing();
-                const allDocs = type === 'incoming' 
-                    ? incoming 
-                    : type === 'outgoing' 
-                    ? outgoing 
-                    : [...incoming, ...outgoing];
+                const allDocs = [
+                    ...incoming.map(doc => ({ ...doc, type: 'incoming' })),
+                    ...outgoing.map(doc => ({ ...doc, type: 'outgoing' }))
+                ];
 
                 const lowerQuery = query.toLowerCase();
                 return allDocs.filter(doc => {
@@ -328,21 +680,21 @@
         }
 
         function showHelp() {
-            const helpText = `📋 **Довідка по використанню системи обліку кореспонденції**
+            const helpText = `📋 Довідка по використанню системи обліку кореспонденції
 
-📥 **Вхідна кореспонденція** - реєстрація отриманих документів  
-📤 **Вихідна кореспонденція** - реєстрація відправлених документів  
-🔍 **Пошук документів** - знаходження документів за ключовими словами
+📥 Вхідна кореспонденція - реєстрація отриманих документів
+📤 Вихідна кореспонденція - реєстрація відправлених документів  
+🔍 Пошук документів - знаходження документів за ключовими словами
 
 При реєстрації документів:
-• Заповніть всі обов'язкові поля  
-• За бажанням прикріпіть файл  
+• Заповніть всі обов'язкові поля
+• За бажанням прикріпіть файл
 • Система автоматично згенерує унікальний номер
 
-**Як переглядати файли:**
-- Після реєстрації документів, вони зберігаються локально на вашому пристрої.  
-- Файли можна завантажити, натиснувши на посилання "Завантажити" у таблиці.
-            `;
+Пошук працює по всіх полях: організації, темі, змісту, примітках та номері документа.
+
+Всі дані зберігаються локально в вашому браузері.`;
+            
             if (tg && tg.showAlert) {
                 tg.showAlert(helpText);
             } else {
@@ -362,7 +714,6 @@
                     subject: formData.get('subject'),
                     content: formData.get('content'),
                     receivedDate: formData.get('receivedDate'),
-                    registeredBy: formData.get('registeredBy'),
                     notes: formData.get('notes') || '',
                     fileName: ''
                 };
@@ -411,7 +762,6 @@
                     subject: formData.get('subject'),
                     content: formData.get('content'),
                     sentDate: formData.get('sentDate'),
-                    registeredBy: formData.get('registeredBy'),
                     notes: formData.get('notes') || '',
                     fileName: ''
                 };
@@ -448,7 +798,7 @@
             }
         });
 
-        function performSearch(type) {
+        function performSearch() {
             const query = document.getElementById('searchQuery').value.trim();
             
             if (!query) {
@@ -459,7 +809,7 @@
             showLoading();
 
             try {
-                const results = db.search(query, type);
+                const results = db.search(query);
                 
                 const resultsContainer = document.getElementById('searchResults');
                 
@@ -523,6 +873,168 @@
                 console.error(error);
             }
         }
+
+        // Обробка файлів
+        document.getElementById('inFile').addEventListener('change', function(e) {
+            const label = document.querySelector('label[for="inFile"]');
+            if (e.target.files.length > 0) {
+                label.textContent = `📎 ${e.target.files[0].name}`;
+            } else {
+                label.textContent = '📎 Вибрати файл';
+            }
+        });
+
+        document.getElementById('outFile').addEventListener('change', function(e) {
+            const label = document.querySelector('label[for="outFile"]');
+            if (e.target.files.length > 0) {
+                label.textContent = `📎 ${e.target.files[0].name}`;
+            } else {
+                label.textContent = '📎 Вибрати файл';
+            }
+        });
+
+        // Пошук по Enter
+        document.getElementById('searchQuery').addEventListener('keypress', function(e) {
+            if (e.key === 'Enter') {
+                performSearch();
+            }
+        });
+
+        // Додаткові функції для Telegram
+        if (tg) {
+            // Налаштування кольорової схеми
+            document.documentElement.style.setProperty('--tg-theme-bg-color', tg.themeParams.bg_color || '#ffffff');
+            document.documentElement.style.setProperty('--tg-theme-text-color', tg.themeParams.text_color || '#000000');
+            document.documentElement.style.setProperty('--tg-theme-hint-color', tg.themeParams.hint_color || '#999999');
+            document.documentElement.style.setProperty('--tg-theme-secondary-bg-color', tg.themeParams.secondary_bg_color || '#f8f9fa');
+
+            // Обробка кнопки назад
+            tg.onEvent('backButtonClicked', function() {
+                if (document.querySelector('.form-container.active') || document.querySelector('.search-container.active')) {
+                    hideAllForms();
+                    tg.BackButton.hide();
+                } else {
+                    tg.close();
+                }
+            });
+
+            // Показуємо кнопку назад при відкритті форм
+            function showBackButton() {
+                tg.BackButton.show();
+            }
+
+            // Оновлюємо функції показу форм
+            const originalShowIncoming = showIncomingForm;
+            const originalShowOutgoing = showOutgoingForm;
+            const originalShowSearch = showSearch;
+
+            showIncomingForm = function() {
+                originalShowIncoming();
+                if (tg) showBackButton();
+            };
+
+            showOutgoingForm = function() {
+                originalShowOutgoing();
+                if (tg) showBackButton();
+            };
+
+            showSearch = function() {
+                originalShowSearch();
+                if (tg) showBackButton();
+            };
+
+            const originalHideAllForms = hideAllForms;
+            hideAllForms = function() {
+                originalHideAllForms();
+                if (tg) tg.BackButton.hide();
+            };
+
+            // Налаштування MainButton для форм
+            function setupMainButton(text, callback) {
+                if (tg.MainButton) {
+                    tg.MainButton.setText(text);
+                    tg.MainButton.show();
+                    tg.MainButton.onClick(callback);
+                }
+            }
+
+            // Приховати MainButton
+            function hideMainButton() {
+                if (tg.MainButton) {
+                    tg.MainButton.hide();
+                    tg.MainButton.offClick();
+                }
+            }
+        }
+
+        // Експорт даних (додаткова функція)
+        function exportData() {
+            const incoming = db.getIncoming();
+            const outgoing = db.getOutgoing();
+            
+            const data = {
+                incoming,
+                outgoing,
+                exportDate: new Date().toISOString(),
+                totalDocuments: incoming.length + outgoing.length
+            };
+
+            const blob = new Blob([JSON.stringify(data, null, 2)], { type: 'application/json' });
+            const url = URL.createObjectURL(blob);
+            const a = document.createElement('a');
+            a.href = url;
+            a.download = `correspondence_backup_${new Date().toISOString().split('T')[0]}.json`;
+            document.body.appendChild(a);
+            a.click();
+            document.body.removeChild(a);
+            URL.revokeObjectURL(url);
+
+            showMessage('✅ Дані експортовано успішно!');
+        }
+
+        // Додаткова кнопка експорту (можна додати в меню)
+        function addExportButton() {
+            const menuGrid = document.querySelector('.menu-grid');
+            const exportButton = document.createElement('button');
+            exportButton.className = 'menu-item';
+            exportButton.innerHTML = `
+                <span class="icon">💾</span>
+                <span class="title">Експорт даних</span>
+            `;
+            exportButton.onclick = exportData;
+            menuGrid.appendChild(exportButton);
+        }
+
+        // Розкоментуйте наступний рядок, якщо хочете кнопку експорту
+        // addExportButton();
+
+        // Демо-дані для тестування (можна видалити)
+        function addDemoData() {
+            if (db.getIncoming().length === 0 && db.getOutgoing().length === 0) {
+                // Додаємо демо вхідний документ
+                db.addDocument('incoming', {
+                    fromWhom: 'Міністерство освіти і науки України',
+                    subject: 'Щодо проведення атестації',
+                    content: 'Інформуємо про терміни проведення атестації педагогічних працівників',
+                    receivedDate: '2024-09-01',
+                    notes: 'Термінове виконання до 15.09.2024'
+                });
+
+                // Додаємо демо вихідний документ
+                db.addDocument('outgoing', {
+                    toWhom: 'Департамент освіти та науки',
+                    subject: 'Звіт про виконану роботу',
+                    content: 'Подаємо звіт про виконану роботу за серпень 2024 року',
+                    sentDate: '2024-09-05',
+                    notes: 'Відправлено електронною поштою'
+                });
+
+                updateStats();
+            }
+        }
+
+        // Розкоментуйте для додавання демо-даних при першому запуску
+        // addDemoData();
     </script>
 </body>
 </html>
